@@ -1,8 +1,9 @@
 from enum import Enum
+from typing import Any
 import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from contextlib import asynccontextmanager
 
 ### Coin Base ###
@@ -10,9 +11,24 @@ from contextlib import asynccontextmanager
 # TODO Wrap in a class
 coinBaseClient = httpx.AsyncClient()
 COINBASE_URL = "https://api.coindesk.com/v1/bpi/currentprice.json"
+
+# Query Parameters
+# CoinBase only supports three currencies
+# so in this case best to restrict
+class CCY(Enum):
+    USD = "USD"
+    EUR = "EUR"
+    GBP = "GBP"
+
 class CCYBPI(BaseModel):
-    code: str # TODO use CCY enum
+    code: CCY # TODO use CCY enum
     rate: float
+
+    @field_validator("rate", mode="before")
+    def parse_comma_separated_float(cls, value: Any) -> float:
+        if isinstance(value, str):
+            value = value.replace(",", "")
+        return float(value)
 
 class BPI(BaseModel):
     USD: CCYBPI
@@ -23,26 +39,16 @@ class CoinBaseResponse(BaseModel):
     bpi: BPI
 
 
-# Query Parameters
-# CoinBase only supports three currencies
-# so in this case best to restrict
-class CCY(Enum):
-    USD = "usd"
-    EUR = "eur"
-    GBP = "gbp"
-
 # Returned value
 class Converted(BaseModel):
     quantity: float
     ccy: CCY
 
-### App ###
-app = FastAPI()
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Lifespan context manager to initialize and clean up shared resources.
+    We use it to initialise the app state
     """
     # Initialize the shared httpx.AsyncClient
     client = httpx.AsyncClient()
@@ -53,6 +59,9 @@ async def lifespan(app: FastAPI):
 
     # Cleanup resources on shutdown
     await client.aclose()
+
+### App ###
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/convert/", response_model=Converted)
 async def convert(ccy_from: CCY, ccy_to: CCY, quantity: float = 1.0) -> Converted:
@@ -71,9 +80,20 @@ async def convert(ccy_from: CCY, ccy_to: CCY, quantity: float = 1.0) -> Converte
             detail=f"External API error: {response.text}",
         )
     
-    res = Converted(quantity=100, ccy="USD")
+    coinBaseData = CoinBaseResponse(**response.json())
+
+    value_from = getattr(coinBaseData.bpi, ccy_from.value)
+    value_to = getattr(coinBaseData.bpi, ccy_to.value)
+
+    cross_rate = value_to.rate / value_from.rate
+    converted_quantity = quantity* cross_rate
+
+    res = Converted(quantity=converted_quantity, ccy=ccy_to)
     return res
 
 def start():
     """Launched with `poetry run start` at root level"""
-    uvicorn.run("fasapi.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("fxconverter.main:app", host="0.0.0.0", port=8000, reload=True)
+
+if __name__ == "main":
+    uvicorn.run("fxconverter.main:app", host="0.0.0.0", port=8000, reload=True)
