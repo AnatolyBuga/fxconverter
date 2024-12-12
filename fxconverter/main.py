@@ -95,5 +95,6 @@ def start():
     """Launched with `poetry run start` at root level"""
     uvicorn.run("fxconverter.main:app", host="0.0.0.0", port=8000, reload=True)
 
-if __name__ == "main":
-    uvicorn.run("fxconverter.main:app", host="0.0.0.0", port=8000, reload=True)
+# For debug purposes
+# if __name__ == "main":
+#     uvicorn.run("fxconverter.main:app", host="0.0.0.0", port=8000, reload=True)

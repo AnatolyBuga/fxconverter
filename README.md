@@ -5,12 +5,19 @@ We use FastAPI in combination with httpx to make asyncronous requests without bl
 
 ## Usage
 1. Create venv
+
 `python -m venv .venv`
+
 2. Activate venv, from bash:
+
 `source .venv/scripts/activate`
+
 3. Install dependencies
+
 `poetry install`
+
 4. run the app:
+
 `poetry run start`
 
 ## TODOs
