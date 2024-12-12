@@ -16,6 +16,11 @@ We use FastAPI in combination with httpx to make asyncronous requests without bl
 
 `poetry install`
 
+If you don't have poetry, the simpliest although not recommended way to install it is via pip
+`pip install poetry`
+
+Alternatively, follow poetry [userguide](https://python-poetry.org/docs/#installing-with-pipx)
+
 4. run the app:
 
 `poetry run start`
