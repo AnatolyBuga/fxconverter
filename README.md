@@ -8,7 +8,7 @@ We use FastAPI in combination with httpx to make asyncronous requests without bl
 
 `python -m venv .venv`
 
-2. Activate venv, from bash:
+2. Activate venv, from `bash`:
 
 `source .venv/scripts/activate`
 
@@ -19,6 +19,10 @@ We use FastAPI in combination with httpx to make asyncronous requests without bl
 4. run the app:
 
 `poetry run start`
+
+5. Use the app:
+
+`curl "http://127.0.0.1:8000/convert/?ccy_from=USD&ccy_to=GBP&quantity=100"`
 
 ## TODOs
 1) Testing
